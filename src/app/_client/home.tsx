@@ -1,13 +1,13 @@
 'use client'; // This page needs to run in the browser, not on the server.
 
 import React from 'react';
-import Head from 'next/head';
+import Link from 'next/link';
 import {
-  Box,
-  Card,
-  Image,
-  Heading,
-  Text
+    Box,
+    Card,
+    Image,
+    Heading,
+    Text
 } from 'rebass'
 
 const siteLogo = {
@@ -16,17 +16,17 @@ const siteLogo = {
 };
 const photo = "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=2048&q=20";
 const user = {
-  name: 'Anonymous',
-  imageUrl: 'https://i.imgur.com/yXOvdOSs.jpg',
-  imageSize: 90,
+    name: 'Anonymous',
+    imageUrl: 'https://i.imgur.com/yXOvdOSs.jpg',
+    imageSize: 90,
 };
 
 function MyButton() {
-  return (
-    <button>
-      I'm a button
-    </button>
-  );
+    return (
+        <button>
+            I'm a button
+        </button>
+    );
 }
 
 function SiteNavigation() {
@@ -70,7 +70,7 @@ function SiteNavigation() {
                 <div className="hidden sm:ml-6 sm:block">
                 <div className="flex space-x-4">
                     {/* Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" */}
-                    <a href="#" className="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" aria-current="page">Dashboard</a>
+                    <Link href="/about/" className="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white" aria-current="page">About</Link>
                     <a href="#" className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Team</a>
                     <a href="#" className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Projects</a>
                     <a href="#" className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Calendar</a>
@@ -143,13 +143,9 @@ export function PageHeader() {
   );
 }
 
-export default function Home() {
+export default function ClientHome() {
   return (
     <>
-        <Head>
-            <title>Home</title>
-        </Head>
-
         <PageHeader />
         <div className="flex">
             <aside className="sidebar p-4">
