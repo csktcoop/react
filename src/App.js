@@ -1,24 +1,30 @@
-import logo from './logo.svg';
+import { useState, lazy } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
+const AuthForm   = lazy(() => import('./component/FormAuth'));
+const SearchPage = lazy(() => import('./component/PageSearch'));
 
 function App() {
+  const [authenticated, setAuthenticated] = useState(false);
+  const phoneNumber = localStorage.getItem('phoneNumber');
+
+  const theElement = authenticated || phoneNumber ?
+  (
+    <SearchPage phoneNumber={phoneNumber} />
+  ) : (
+    <AuthForm setAuthenticated={setAuthenticated} />
+  );
+
+// https://reactrouter.com/start/declarative/routing
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/"
+          element={theElement}
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

@@ -36,3 +36,28 @@
     transform: rotate(360deg);
   }
 }
+
+/* From this point Tailwind CSS compatible rules */
+.max-w-xs {
+  max-width: 20em;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.gap-4 {
+  gap: 1em;
+}
+
+.p-4 {
+  padding: 1em;
+}

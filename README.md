@@ -1,84 +1,62 @@
-# Quick start
+# Terms
 
-```
-npm install
-npm start
-```
+## Express
 
-# Getting Started with Create React App
+A minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Firebase
 
-## Available Scripts
+BaaS (Backend As A Service) with a set of services that help building apps.
 
-In the project directory, you can run:
+### Firestore
 
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+A flexible, scalable database for mobile device, web, and server development from Firebase and Google Cloud.
 
 
-# Aditional packages
+# React Hello Application
 
-1. axios<br>Make XHR requests from browser, HTTP request from Node
-1. react-router-dom<br>react-router replacement
-1. firebase<br>DB managment
+## Project Structure
+- `react/`: React front-end
+  - `src/component/`: React components (`AuthForm.js`, `SearchPage.js`)
+  - `src/App.js`: Main app with routing
+  - `src/backend/`: Express back-end
+  - `src/backend/index.js`: API endpoints
+- Screenshots: Located in `screenshots/` folder
+
+## Setup Instructions
+1. **Front-End**:
+   - Navigate to `react/`
+   - Run `npm install`
+   - Run `npm start` to start the React app on `http://localhost:3000`
+1. **Firebase**:
+   - Set up a Firestore database with collections: `accessCodes` and `users`
+   - https://console.firebase.google.com/u/1/project/<Project ID>/settings/serviceaccounts/adminsdk
+   - Select Node.js (default)
+   - Click "Generate new private key" button
+   - Put the downloaded .json into `react/src/backend/db-firebase-admin.json`
+1. **Twilio**:
+   - Update Twilio credentials in `react/src/backend/index.js`
+1. **GitHub**:
+   - Replace GitHub API token in `react/src/backend/index.js`
+1. **Back-End**:
+   - Navigate to `react/src/backend/`
+   - Run `npm install`
+   - Replace Firebase and Twilio credentials in `index.js`
+   - Replace GitHub API token in `index.js`
+   - Run `node index.js` to start the server on `http://localhost:5000`
+
+## Features
+- Phone number authentication with 6-digit access code via SMS
+- GitHub user search with pagination
+- Like GitHub profiles, stored in Firestore
+- Profile modal showing phone number and liked users
+- Persistent liked profiles via Firestore
+
+## Screenshots
+- `screenshots/auth_form.png`: Authentication form
+- `screenshots/search_page.png`: GitHub search page
+- `screenshots/profile_modal.png`: User profile modal
+
+## Notes
+- Replace with authorized credentials for full functionality.
+- Ensure CORS is enabled for local development.
