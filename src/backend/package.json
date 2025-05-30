@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "debug-linux": "DEBUG=express:* node index.js",
-    "debug-windows": "$env:DEBUG=\"http,mail,express:*\"; node index.js"
+    "dev": "nodemon --env-file-if-exists=.env index.js",
+    "powershell-wo-env-file": "$env:DEBUG=\"http,mail,express:*\"; node .\node_modules\nodemon\bin\nodemon.js index.js"
   },
   "keywords": [],
   "author": "",

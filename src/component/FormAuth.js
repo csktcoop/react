@@ -48,16 +48,17 @@ const FormAuth = ({ setAuthenticated }) => {
   return (
     <div>
       <h2>Authentication</h2>
-      <div className="flex flex-col items-start gap-4 p-4 max-w-xs">
+      <form className="flex flex-col items-start gap-4 p-4 max-w-xs" onSubmit={handlePhoneSubmit}>
         <input
           name="phoneNumber"
-          placeholder="Phone Number"
+          placeholder="+849xxxxxxxx"
+          pattern="\+\d{11}"
           value={phoneNumber}
           onChange={(e) => setPhoneNumber(e.target.value)}
           required
         />
-        <button onClick={handlePhoneSubmit}>Send Access Code</button>
-      </div>
+        <button type="submit">Send Access Code</button>
+      </form>
       <div className="flex flex-col items-start gap-4 p-4 max-w-xs">
         <input
           type="text"

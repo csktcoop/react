@@ -1,53 +1,98 @@
-const express = require('express'); // Web Application Framework
-const cors = require('cors');
-const admin = require('firebase-admin');
-const twilio = require('twilio');
-const axios = require('axios');
+'use strict';
 
+const express  = require('express'); // Web Application Framework
+const cors     = require('cors');
+const firebase = require('firebase-admin'); // Firebase services
+const twilio   = require('twilio');
+const axios    = require('axios');
+
+// https://expressjs.com/en/resources/middleware/cors.html#configuring-cors
 const corsOptions = {
   origin: 'http://localhost:3000',
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 
 const app = express();
-app.use(cors(corsOptions));
-app.use(express.json());
+app.use(cors(corsOptions)); // CORS middleware for extra security layer
+app.use(express.json()); // JSON middleware for parsing json and match the Content-Type header
 
-// Initialize Firebase Admin with dummy credentials
 const serviceAccount = require('./db-firebase-admin.json');
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+const { use, StrictMode } = require('react');
+firebase.initializeApp({
+  credential: firebase.credential.cert(serviceAccount)
 });
-const db = admin.firestore();
+const db = firebase.firestore();
+// Use database from Firestore service
 
-// Initialize Twilio with dummy credentials
-const twilioClient = twilio('AC_dummy_account_sid', 'dummy_auth_token');
+async function getFirestoreDataByField(collection = '', document = '', field = '') {
+  if (
+    typeof collection !== "string" || typeof document !== "string" || typeof field !== "string" ||
+    ! (collection && document && field)
+  ) {
+    return '';
+  }
 
-// Generate random 6-digit code
+  // .data() will get a nasty data.accessCode.accessCode structure, .get(field) for data.accessCode
+  let value = (await db.collection(collection).doc(document).get()).get(field) ?? '';
+  if (! Object.keys(field).length) {
+    value = '';
+  }
+
+  return value;
+}
+
+async function setFirestoreData(collection = '', document = '', fieldValueObject = {}) {
+  if (
+    typeof collection !== "string" || typeof document !== "string" || typeof fieldValueObject !== "object" ||
+    ! (collection && document && Object.keys(fieldValueObject).length)
+  ) {
+    return;
+  }
+
+  db.collection(collection).doc(document).set(fieldValueObject);
+}
+
+const smsProvider = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+// Use SMS service from Twilio
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#getting_a_random_number_between_two_values
 const generateAccessCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+// Got random 6-digits code
 
-// POST: Create new access code
+// Create new access code
 app.post('/api/1.0/createNewAccessCode', async (req, res) => {
   const { phoneNumber } = req.body;
   if (! phoneNumber) {
+    // Simple check
     res.status(400).send('Missing Phone Number');
   }
 
-  let accessCode = (await db.collection('accessCodes').doc(phoneNumber).get()).get('accessCode');
   try {
+    const collection = 'accessCodes';
+    const field      = 'accessCode';
+    let accessCode   = await getFirestoreDataByField(collection, phoneNumber, field);
     if (! accessCode) {
-      // Skip requirements after 1st code stored to save resource and bypass Twilio Rate Limit.
+      // Skip requirements after 1st code stored to save resource and bypass Twilio Rate Limit, "com.twilio.inventory.utils.exception.ValidationException: Trial accounts are not allowed to host numbers" and "You must upgrade your account to port phone numbers into Twilio."
+      // Disable the if (and the localStorage) to test the normal logic
+
       accessCode = generateAccessCode();
 
-      // Save to Firestore
-      await db.collection('accessCodes').doc(phoneNumber).set({ accessCode });
+      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Object_initializer#property_definitions
+      // Shorthand property { "accessCode": accessCode } into { accessCode }
+      setFirestoreData(collection, phoneNumber, { accessCode });
 
-      // Send SMS via Twilio
-      await twilioClient.messages.create({
+      // https://www.twilio.com/docs/api/errors/21211
+      // phoneNumber format: <+><2-digits country code><Vietnam 8-digits subscriber number including area code>
+      // "from" and "to" cannot be the same
+      // https://www.twilio.com/docs/errors/21659
+      // "from" must be hosting number and in the same country as "to"
+      // [NOTE]: I'm unable to test this logic because of Trial account
+      await smsProvider.messages.create({
         body: `Your access code is ${accessCode}`,
-        from: '+1234567890', // Dummy Twilio number
+        from: process.env.ACCESS_CODE_SMS_FROM,
         to: phoneNumber,
       });
+      // Twilio sent SMS
     }
 
     res.status(200).send({ accessCode });
@@ -57,17 +102,22 @@ app.post('/api/1.0/createNewAccessCode', async (req, res) => {
   }
 });
 
-// POST: Validate access code
+// Validate access code
 app.post('/api/1.0/validateAccessCode', async (req, res) => {
   const { phoneNumber, accessCode } = req.body;
-  if ( ! (phoneNumber && accessCode) ) {
+  if (! (phoneNumber && accessCode)) {
+    // Simple check
     res.status(400).send('Either missing Phone Number or Access Code');
   }
+
   try {
-    const dbAccessCode = (await db.collection('accessCodes').doc(phoneNumber).get()).get('accessCode');
+    const collection   = 'accessCodes';
+    const field        = 'accessCode';
+    const dbAccessCode = await getFirestoreDataByField(collection, phoneNumber, field);
     if (dbAccessCode && dbAccessCode === accessCode) {
-      // Clear access code after validation
-      await db.collection('accessCodes').doc(phoneNumber).set({ accessCode: '' });
+      // Clear invalidate the data
+      accessCode = "";
+      setFirestoreData(collection, phoneNumber, { accessCode });
       res.status(200).send({ success: true });
     } else {
       res.status(400).send({ success: false });
