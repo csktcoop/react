@@ -46,7 +46,7 @@ const FormAuth = ({ setAuthenticated }) => {
   };
 
   return (
-    <div>
+    <div className='container flex-col'>
       <h2>Authentication</h2>
       <form className="flex flex-col items-start gap-4 p-4 max-w-xs" onSubmit={handlePhoneSubmit}>
         <input

@@ -17,7 +17,6 @@ app.use(cors(corsOptions)); // CORS middleware for extra security layer
 app.use(express.json()); // JSON middleware for parsing json and match the Content-Type header
 
 const serviceAccount = require('./db-firebase-admin.json');
-const { use, StrictMode } = require('react');
 firebase.initializeApp({
   credential: firebase.credential.cert(serviceAccount)
 });
@@ -59,12 +58,16 @@ const smsProvider = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AU
 const generateAccessCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 // Got random 6-digits code
 
+const HTTP_OK = 200;
+const HTTP_BAD_REQUEST = 400;
+const HTTP_INTERNAL_SERVER_ERROR = 500;
+
 // Create new access code
 app.post('/api/1.0/createNewAccessCode', async (req, res) => {
   const { phoneNumber } = req.body;
   if (! phoneNumber) {
     // Simple check
-    res.status(400).send('Missing Phone Number');
+    res.status(HTTP_BAD_REQUEST).send('Missing Phone Number');
   }
 
   try {
@@ -95,19 +98,19 @@ app.post('/api/1.0/createNewAccessCode', async (req, res) => {
       // Twilio sent SMS
     }
 
-    res.status(200).send({ accessCode });
+    res.status(HTTP_OK).send({ accessCode });
   } catch (error) {
-    res.status(500).send('Error generating access code');
+    res.status(HTTP_INTERNAL_SERVER_ERROR).send('Error generating access code');
     console.log(error);
   }
 });
 
 // Validate access code
 app.post('/api/1.0/validateAccessCode', async (req, res) => {
-  const { phoneNumber, accessCode } = req.body;
+  let { phoneNumber, accessCode } = req.body;
   if (! (phoneNumber && accessCode)) {
     // Simple check
-    res.status(400).send('Either missing Phone Number or Access Code');
+    res.status(HTTP_BAD_REQUEST).send('Either missing Phone Number or Access Code');
   }
 
   try {
@@ -118,83 +121,91 @@ app.post('/api/1.0/validateAccessCode', async (req, res) => {
       // Clear invalidate the data
       accessCode = "";
       setFirestoreData(collection, phoneNumber, { accessCode });
-      res.status(200).send({ success: true });
+      res.status(HTTP_OK).send({ success: true });
     } else {
-      res.status(400).send({ success: false });
+      res.status(HTTP_BAD_REQUEST).send({ success: false });
     }
   } catch (error) {
-    res.status(500).send('Error validating access code');
+    res.status(HTTP_INTERNAL_SERVER_ERROR).send('Error validating access code');
     console.log(error);
   }
 });
 
-// GET: Search GitHub users
+const GITHUB_AUTH_HEADER = 'Bearer ' + process.env.GITHUB_API_TOKEN;
+// https://docs.github.com/en/rest/search/search?apiVersion=2022-11-28#search-users
+const API_GITHUB_SEARCH_USERS = 'https://api.github.com/search/users';
+// https://docs.github.com/en/rest/users/users?apiVersion=2022-11-28#get-a-user-using-their-id
+const API_GITHUB_GET_USER_PROFILE = 'https://api.github.com/user/%USER_ID%';
+
+// Search GitHub users
 app.get('/api/1.0/searchGithubUsers', async (req, res) => {
   const { q, page, per_page } = req.query;
   try {
-    const response = await axios.get('https://api.github.com/search/users', {
+    const response = await axios.get(API_GITHUB_SEARCH_USERS, {
       params: { q, page, per_page },
-      headers: { Authorization: 'Bearer github_dummy_token' }, // Replace with real token
+      headers: { Authorization: GITHUB_AUTH_HEADER }
     });
-    res.status(200).send(response.data);
+    res.status(HTTP_OK).send(response.data);
   } catch (error) {
-    res.status(500).send('Error searching GitHub users');
+    res.status(HTTP_INTERNAL_SERVER_ERROR).send('Error searching GitHub users');
     console.log(error);
   }
 });
 
-// GET: Find GitHub user profile
+// Find GitHub user profile
 app.get('/api/1.0/findGithubUserProfile', async (req, res) => {
   const { github_user_id } = req.query;
   try {
-    const response = await axios.get(`https://api.github.com/users/${github_user_id}`, {
-      headers: { Authorization: 'Bearer github_dummy_token' }, // Replace with real token
+    const response = await axios.get(API_GITHUB_GET_USER_PROFILE.replace(/%\w+%/, github_user_id), {
+      headers: { Authorization: GITHUB_AUTH_HEADER }
     });
-    res.status(200).send(response.data);
+    res.status(HTTP_OK).send(response.data);
   } catch (error) {
-    res.status(500).send('Error fetching GitHub user profile');
+    res.status(HTTP_INTERNAL_SERVER_ERROR).send('Error fetching GitHub user profile');
     console.log(error);
   }
 });
 
-// POST: Like GitHub user
+// Like GitHub user
 app.post('/api/1.0/likeGithubUser', async (req, res) => {
   const { phone_number, github_user_id } = req.body;
   try {
-    const userRef = db.collection('users').doc(phone_number);
+    const collection = 'users';
+    const userRef = db.collection(collection).doc(phone_number);
     const userDoc = await userRef.get();
     const userData = userDoc.exists ? userDoc.data() : { favorite_github_users: [] };
     if (!userData.favorite_github_users.includes(github_user_id)) {
       userData.favorite_github_users.push(github_user_id);
       await userRef.set(userData);
     }
-    res.status(200).send();
+    res.status(HTTP_OK).send();
   } catch (error) {
-    res.status(500).send('Error liking GitHub user');
+    res.status(HTTP_INTERNAL_SERVER_ERROR).send('Error liking GitHub user');
     console.log(error);
   }
 });
 
-// GET: Get user profile
+// Get user profile
 app.get('/api/1.0/getUserProfile', async (req, res) => {
   const { phone_number } = req.query;
   try {
-    const userDoc = await db.collection('users').doc(phone_number).get();
-    if (!userDoc.exists) {
-      return res.status(200).send({ favorite_github_users: [] });
+    const collection = 'users';
+    const userDoc = await db.collection(collection).doc(phone_number).get();
+    if (! userDoc.exists) {
+      return res.status(HTTP_OK).send({ favorite_github_users: [] });
     }
     const userData = userDoc.data();
     const favoriteUsers = await Promise.all(
       userData.favorite_github_users.map(async (id) => {
-        const response = await axios.get(`https://api.github.com/users/${id}`, {
-          headers: { Authorization: 'Bearer github_dummy_token' }, // Replace with real token
+        const response = await axios.get(API_GITHUB_GET_USER_PROFILE.replace(/%\w+%/, id), {
+          headers: { Authorization: GITHUB_AUTH_HEADER }
         });
         return response.data;
       })
     );
-    res.status(200).send({ favorite_github_users: favoriteUsers });
+    res.status(HTTP_OK).send({ favorite_github_users: favoriteUsers });
   } catch (error) {
-    res.status(500).send('Error fetching user profile');
+    res.status(HTTP_INTERNAL_SERVER_ERROR).send('Error fetching user profile');
     console.log(error);
   }
 });

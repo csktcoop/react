@@ -5,6 +5,7 @@ const AuthForm   = lazy(() => import('./component/FormAuth'));
 const SearchPage = lazy(() => import('./component/PageSearch'));
 
 function App() {
+  // https://react.dev/reference/react/useState#usestate
   const [authenticated, setAuthenticated] = useState(false);
   const phoneNumber = localStorage.getItem('phoneNumber');
 
